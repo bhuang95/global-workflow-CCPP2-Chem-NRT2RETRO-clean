@@ -1,0 +1,24 @@
+#!/bin/ksh -x
+
+########## config.eupd ##########
+# Ensemble update specific, dependency config.anal
+
+echo "BEGIN: config.eupd"
+
+# Get task specific resources
+. $EXPDIR/config.resources eupd
+
+# define layout and io_layout for JEDI run 
+export layout_eupd="3,4"   #"2,4" 
+export io_layout_eupd="1,1"  # Don't Change
+export ncore_eupd=72         # ncore_anal=6*l1*l2 (l1, l2 in layout_anal)
+
+#export ENKFUPDSH="$HOMEgsi/scripts/exglobal_enkf_update_fv3gfs.sh.ecf"
+#export ENKFUPDSH="$HOMEgsi/scripts/exaero_enkf_201606.sh.ecf"
+export ENKFUPDSH="$HOMEgsi/scripts/exjedi_letkf_AOD_LUTs_mpi.sh.ecf"
+#export ENKFUPDSH="$HOMEgsi/scripts/exjedi_getkf_AOD_LUTs_mpi.sh.ecf"
+export npe_enkf=$npe_eupd
+
+#export NAM_ENKF="analpertwtnh=0.9,analpertwtsh=0.9,analpertwttr=0.9"
+
+echo "END: config.eupd"

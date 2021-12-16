@@ -1,0 +1,18 @@
+#!/bin/ksh -x
+
+########## config.prepchem ##########
+# PREPBUFR specific configuration
+
+echo "BEGIN: config.prepchem"
+
+# Get task specific resources
+. $EXPDIR/config.resources prepchem
+
+
+# Set prepchem variables 
+
+# Set job and DATAROOT
+export job=${CDUMP}_prep_${cyc}
+export EMIDIR="/scratch1/BMC/gsd-fv3-dev/lzhang/emi_"
+#export EMIINPUT=/scratch1/BMC/gsd-fv3-dev/Haiqin.Li/Develop/emi_C"
+echo "END: config.prepchem"

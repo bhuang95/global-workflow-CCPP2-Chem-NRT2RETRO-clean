@@ -1,0 +1,229 @@
+<?xml version="1.0"?>
+<!DOCTYPE workflow
+[
+	<!--
+	PROGRAM
+		Main workflow manager for cycling Global Forecast System
+
+	AUTHOR:
+		Rahul Mahajan
+		rahul.mahajan@noaa.gov
+
+	NOTES:
+		This workflow was automatically generated at 2019-12-02 18:05:39.230602
+	-->
+
+	<!-- Experiment parameters such as name, starting, ending dates -->
+	<!ENTITY PSLOT "global-workflow-CCPP2-Chem-NRT-clean">
+	<!ENTITY SDATE "202106281200">
+	<!ENTITY EDATE "202112310000">
+	<!ENTITY INTERVAL "06:00:00">
+	<!ENTITY CYCINTHR "6">
+	<!ENTITY CASE_CNTL     "C96">
+	<!ENTITY CASE_ENKF     "C96">
+	<!ENTITY CASE_CNTL_GDAS     "C768">
+	<!ENTITY CASE_ENKF_GDAS     "C384">
+	<!ENTITY NMEM_AERO     "20">
+	<!ENTITY NMEM_AERO_ENSGRP     "4">
+
+	<!-- Run Envrionment -->
+	<!ENTITY RUN_ENVIR "emc">
+	<!ENTITY machine "HERA">
+
+	<!-- Workflow Tasks Controllers -->
+	<!ENTITY ENSFILE_MISSING "NO">
+	<!ENTITY ENSFILE_m3SFCANL "NO">
+
+
+	<!-- MET File Directories -->
+	<!-- Location of processed MET analysis data -->
+	<!ENTITY METDIR_NRT  "/scratch1/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/NRTdata/gdasAna/">
+	<!-- Location of GDAS Met analysis and sfc 6-hour forecast in Gaussian grid-->
+	<!ENTITY METDIR_HERA "/scratch1/NCEPDEV/rstprod/com/gfs/prod/">
+	<!ENTITY METDIR_WCOSS1  "/scratch2/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/MISC/test-prepgdasana_ens/data/">
+
+	<!-- Experiment top run directory-->
+	<!ENTITY TOPXMLDIR "/home/Bo.Huang/JEDI-2020/GSDChem_cycling"> 
+	<!ENTITY TOPRUNDIR "/scratch2/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/expRuns"> 
+	<!ENTITY EXPDIR "&TOPXMLDIR;/&PSLOT;/dr-work/">
+	<!ENTITY ROTDIR "&TOPRUNDIR;/&PSLOT;/dr-data/">
+
+	<!-- Directories for driving the workflow -->
+	<!ENTITY HOMEgfs  "/home/Bo.Huang/JEDI-2020/GSDChem_cycling/global-workflow-CCPP2-Chem-NRT-clean/">
+	<!ENTITY JOBS_DIR "&HOMEgfs;/jobs/rocoto">
+	<!ENTITY DMPDIR   "/scratch1/NCEPDEV/global/glopara/dump">
+	<!ENTITY HOMEjedi "/scratch1/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/expCodes/fv3-bundle/V20210701/build/">
+
+	<!-- Machine related entities -->
+	<!ENTITY ACCOUNT    "chem-var">
+	<!ENTITY QUEUE      "batch">
+	<!ENTITY QUEUE_ARCH "service">
+	<!ENTITY PARTITION_ARCH "service">
+	<!ENTITY SCHEDULER  "slurm">
+
+	<!-- Toggle HPSS archiving -->
+	<!ENTITY ARCHIVE_TO_HPSS "YES">
+
+	<!-- ROCOTO parameters that control workflow -->
+	<!ENTITY CYCLETHROTTLE "12">
+	<!ENTITY TASKTHROTTLE  "20">
+	<!ENTITY MAXTRIES      "10">
+
+	<!ENTITY QUEUE_PREPMET_GDAS     "&QUEUE;">
+	<!ENTITY WALLTIME_PREPMET_GDAS  "00:15:00">
+	<!ENTITY RESOURCES_PREPMET_GDAS "<nodes>4:ppn=40:tpp=1</nodes>">
+	<!ENTITY NATIVE_PREPMET_GDAS    "--export=NONE">
+
+]>
+
+
+<workflow realtime="F" scheduler="&SCHEDULER;" cyclethrottle="&CYCLETHROTTLE;" taskthrottle="&TASKTHROTTLE;">
+
+	<log verbosity="10"><cyclestr>&ROTDIR;/logs/xmlLog/log.prepGdasAnalSfc.@Y@m@d@H.log</cyclestr></log>
+
+	<!-- Define the cycles -->
+	<cycledef group="first">&SDATE;     &SDATE;     06:00:00</cycledef>
+	<cycledef group="gdas" >&SDATE;     &EDATE;     06:00:00</cycledef>
+	<cycledef group="ens" >&SDATE;     &EDATE;     06:00:00</cycledef>
+
+<task name="gdasprepmet" cycledefs="gdas" maxtries="&MAXTRIES;">
+
+	<command>&JOBS_DIR;/prepgdasana.sh</command>
+
+	<jobname><cyclestr>&PSLOT;_gdasprepmet_@H</cyclestr></jobname>
+	<account>&ACCOUNT;</account>
+	<queue>&QUEUE_PREPMET_GDAS;</queue>
+	&RESOURCES_PREPMET_GDAS;
+	<walltime>&WALLTIME_PREPMET_GDAS;</walltime>
+	
+	<native>&NATIVE_PREPMET_GDAS;</native>
+
+	<join><cyclestr>&ROTDIR;/logs/@Y@m@d@H/gdasprepmet.log</cyclestr></join>
+
+	<envar><name>SLURM_SET</name><value>YES</value></envar>
+	<envar><name>PSLOT</name><value>&PSLOT;</value></envar>
+	<envar><name>RUN_ENVIR</name><value>&RUN_ENVIR;</value></envar>
+	<envar><name>HOMEgfs</name><value>&HOMEgfs;</value></envar>
+	<envar><name>HOMEjedi</name><value>&HOMEjedi;</value></envar>
+	<envar><name>ROTDIR</name><value>&ROTDIR;</value></envar>
+	<envar><name>EXPDIR</name><value>&EXPDIR;</value></envar>
+	<envar><name>METDIR_NRT</name><value>&METDIR_NRT;</value></envar>
+	<envar><name>METDIR_WCOSS</name><value>&METDIR_WCOSS;</value></envar>
+	<envar><name>METDIR_HERA</name><value>&METDIR_HERA;</value></envar>
+	<envar><name>machine</name><value>&machine;</value></envar>
+	<envar><name>CASE_CNTL</name><value>&CASE_CNTL;</value></envar>
+	<envar><name>CASE_CNTL_GDAS</name><value>&CASE_CNTL_GDAS;</value></envar>
+	<envar><name>CASE_ENKF</name><value>&CASE_ENKF;</value></envar>
+	<envar><name>CASE_ENKF_GDAS</name><value>&CASE_ENKF_GDAS;</value></envar>
+	<envar><name>NMEM_AERO</name><value>&NMEM_AERO;</value></envar>
+	<envar><name>ENSFILE_MISSING</name><value>&ENSFILE_MISSING;</value></envar>
+	<envar><name>ENSFILE_m3SFCANL</name><value>&ENSFILE_m3SFCANL;</value></envar>
+	<envar><name>CDATE</name><value><cyclestr>@Y@m@d@H</cyclestr></value></envar>
+	<envar><name>CYCINTHR</name><value>&CYCINTHR;</value></envar>
+	<envar><name>CDUMP</name><value>gdas</value></envar>
+	<envar><name>PDY</name><value><cyclestr>@Y@m@d</cyclestr></value></envar>
+	<envar><name>cyc</name><value><cyclestr>@H</cyclestr></value></envar>
+        
+	<dependency>
+		<and>
+			<datadep age="600"><cyclestr>&METDIR_HERA;/gdas.@Y@m@d/@H/atmos/gdas.t@Hz.atmanl.nc</cyclestr></datadep>
+			<datadep age="600"><cyclestr>&METDIR_HERA;/gdas.@Y@m@d/@H/atmos/gdas.t@Hz.sfcanl.nc</cyclestr></datadep>
+		</and>
+	</dependency>
+
+</task>
+<metatask name="gdasensprepmet">
+
+	<var name="grp">01 02 03 04 05</var>
+
+	<task name="gdasensprepmet#grp#" cycledefs="gdas" maxtries="&MAXTRIES;">
+
+		<command>&JOBS_DIR;/prepgdasana_ens_6hfcst.sh</command>
+
+		<jobname><cyclestr>&PSLOT;_gdasensprepmet#grp#_@H</cyclestr></jobname>
+		<account>&ACCOUNT;</account>
+		<queue>&QUEUE_PREPMET_GDAS;</queue>
+		&RESOURCES_PREPMET_GDAS;
+		<walltime>&WALLTIME_PREPMET_GDAS;</walltime>
+		
+		<native>&NATIVE_PREPMET_GDAS;</native>
+
+		<join><cyclestr>&ROTDIR;/logs/@Y@m@d@H/gdasensprepmet#grp#.log</cyclestr></join>
+
+		<envar><name>SLURM_SET</name><value>YES</value></envar>
+		<envar><name>PSLOT</name><value>&PSLOT;</value></envar>
+		<envar><name>RUN_ENVIR</name><value>&RUN_ENVIR;</value></envar>
+		<envar><name>HOMEgfs</name><value>&HOMEgfs;</value></envar>
+		<envar><name>HOMEjedi</name><value>&HOMEjedi;</value></envar>
+	        <envar><name>ROTDIR</name><value>&ROTDIR;</value></envar>
+		<envar><name>EXPDIR</name><value>&EXPDIR;</value></envar>
+		<envar><name>METDIR_NRT</name><value>&METDIR_NRT;</value></envar>
+		<envar><name>METDIR_WCOSS</name><value>&METDIR_WCOSS;</value></envar>
+		<envar><name>METDIR_HERA</name><value>&METDIR_HERA;</value></envar>
+		<envar><name>CASE_ENKF</name><value>&CASE_ENKF;</value></envar>
+		<envar><name>CASE_ENKF_GDAS</name><value>&CASE_ENKF_GDAS;</value></envar>
+		<envar><name>ENSFILE_MISSING</name><value>&ENSFILE_MISSING;</value></envar>
+		<envar><name>ENSFILE_m3SFCANL</name><value>&ENSFILE_m3SFCANL;</value></envar>
+		<envar><name>NMEM_AERO_ENSGRP</name><value>&NMEM_AERO_ENSGRP;</value></envar>
+		<envar><name>NMEM_AERO</name><value>&NMEM_AERO;</value></envar>
+		<envar><name>machine</name><value>&machine;</value></envar>
+		<envar><name>CDATE</name><value><cyclestr>@Y@m@d@H</cyclestr></value></envar>
+		<envar><name>PDY</name><value><cyclestr>@Y@m@d</cyclestr></value></envar>
+		<envar><name>cyc</name><value><cyclestr>@H</cyclestr></value></envar>
+		<envar><name>CDUMP</name><value>gdas</value></envar>
+		<envar><name>ENSGRP</name><value>#grp#</value></envar>
+
+		<dependency>
+			<and>
+				<or>
+					<or>
+						<and>
+							<datadep age="600"><cyclestr>&METDIR_WCOSS;/enkfgdas.@Y@m@d@H_grp01.tar</cyclestr></datadep>
+							<datadep age="600"><cyclestr>&METDIR_WCOSS;/enkfgdas.@Y@m@d@H_grp02.tar</cyclestr></datadep>
+							<datadep age="600"><cyclestr>&METDIR_WCOSS;/enkfgdas.@Y@m@d@H_grp03.tar</cyclestr></datadep>
+							<datadep age="600"><cyclestr>&METDIR_WCOSS;/enkfgdas.@Y@m@d@H_grp04.tar</cyclestr></datadep>
+							<datadep age="600"><cyclestr>&METDIR_WCOSS;/enkfgdas.@Y@m@d@H_grp05.tar</cyclestr></datadep>
+							<sh shell="/bin/bash"><cyclestr>grep @Y@m@d@H &METDIR_WCOSS;/record.txt</cyclestr></sh> 
+							<streq><left>&ENSFILE_m3SFCANL;</left><right>YES</right></streq>
+						</and>
+						<and>
+							<datadep age="600" minsize="1000000000B"><cyclestr offset="-6:00:00">&METDIR_WCOSS;/gg/enkfgdas.@Y@m@d@H_grp01.tar</cyclestr></datadep>
+							<datadep age="600" minsize="1000000000B"><cyclestr offset="-6:00:00">&METDIR_WCOSS;/gg/enkfgdas.@Y@m@d@H_grp02.tar</cyclestr></datadep>
+							<datadep age="600" minsize="1000000000B"><cyclestr offset="-6:00:00">&METDIR_WCOSS;/gg/enkfgdas.@Y@m@d@H_grp03.tar</cyclestr></datadep>
+							<datadep age="600" minsize="1000000000B"><cyclestr offset="-6:00:00">&METDIR_WCOSS;/gg/enkfgdas.@Y@m@d@H_grp04.tar</cyclestr></datadep>
+							<datadep age="600" minsize="1000000000B"><cyclestr offset="-6:00:00">&METDIR_WCOSS;/gg/enkfgdas.@Y@m@d@H_grp05.tar</cyclestr></datadep>
+							<sh shell="/bin/bash"><cyclestr offset="-6:00:00">grep @Y@m@d@H &METDIR_WCOSS;/gg/record.txt</cyclestr></sh> 
+							<streq><left>&ENSFILE_m3SFCANL;</left><right>NO</right></streq>
+						</and>
+					</or>
+					<streq><left>&ENSFILE_MISSING;</left><right>YES</right></streq>
+				</or>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem001/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem002/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem003/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem004/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem005/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem006/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem007/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem008/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem009/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem010/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem011/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem012/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem013/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem014/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem015/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem016/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem017/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem018/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem019/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+				<datadep age="600" minsize="5393379743B"><cyclestr>&METDIR_HERA;/enkfgdas.@Y@m@d/@H/atmos/mem020/gdas.t@Hz.ratminc.nc</cyclestr></datadep>
+			</and>
+		</dependency>
+
+	</task>
+
+</metatask>
+
+
+</workflow>

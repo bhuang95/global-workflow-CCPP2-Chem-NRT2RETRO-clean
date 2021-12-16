@@ -1,0 +1,14 @@
+#!/bin/ksh -x
+
+########## config.prepmet ##########
+# Prep step specific
+
+echo "BEGIN: config.prepmet"
+
+# Get task specific resources
+. $EXPDIR/config.resources prepmet
+
+export PREPMETSH=$HOMEgfs/scripts/exaero_prepmet.sh.ecf
+export ENSPREPMETSH=$HOMEgfs/scripts/exaero_ensprepmet.sh.ecf
+
+echo "END: config.prepmet"

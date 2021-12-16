@@ -1,0 +1,1 @@
+/scratch1/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/expCodes/GSDChem_cycling/global-workflow-CCPP2-Chem/stocPert-Sam/sppt-20210304-dustBugFixed/ufs-weather-model/tests/fv3_2.exe

@@ -1,0 +1,1 @@
+/scratch2/BMC/wrfruc/Samuel.Trahan/viirs-thinning/mmapp_2018_src_omp/exec/viirs2ioda.x

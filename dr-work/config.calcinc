@@ -1,0 +1,21 @@
+#!/bin/ksh -x
+
+########## config.calcinc ##########
+# CALCINC specific configuration
+
+echo "BEGIN: config.calcinc"
+
+# Get task specific resources
+. $EXPDIR/config.resources calcinc
+
+
+# Set calcinc variables 
+
+# Set job and DATAROOT
+export job=${CDUMP}_calcinc_${cyc}
+export DATA="$RUNDIR/$CDATE/$CDUMP"
+export NTHREADS_CALCINC=1
+export ncmd=1
+export DO_CALC_INCREMENT="YES"
+
+echo "END: config.calcinc"

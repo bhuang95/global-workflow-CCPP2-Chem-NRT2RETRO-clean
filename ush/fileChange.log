@@ -1,0 +1,15 @@
+Source-1
+/scratch1/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/expCodes/GSDChem_cycling/global-workflow-CCPP2-LUT-clean/ush
+	(1) incdate.sh
+	(2) load_fv3gfs_modules.sh
+
+
+Source-2
+/scratch1/BMC/gsd-fv3-dev/MAPP_2018/bhuang/JEDI-2020/JEDI-FV3/expCodes/GSDChem_cycling/global-workflow-CCPP2-Chem/gsd-ccpp-chem/ush
+	(1) getncdimlen (Identical with Source-2)
+	(2) fv3gfs_nc2nemsio.sh (Identical with Source-1, not necessary and deleted)
+	(3) fv3gfs_regrid_nemsio.sh (Identical with Source-1,  not necessary and deleted)
+	(4) fv3gfs_remap.sh (Identical with Source-1,  not necessary and deleted)
+	(5) global_chgres_driver.sh (Identical with Source-1)
+	(6) global_chgres.sh (Identical with Source-1)
+	(7) gsi_utils.py

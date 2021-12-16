@@ -1,0 +1,163 @@
+#!/bin/ksh
+################################################################################
+####  UNIX Script Documentation Block
+#                      .                                             .
+# Script name:
+# Script description:
+#
+# Author:                    Org: NCEP/EMC     Date:           
+#
+# Abstract: This script makes an analysis using JEDI               
+#           NOTE quick and dirty for Aerosol 3DEnVar
+#
+# $Id$
+#
+# Attributes:
+#   Language: POSIX shell
+#   Machine: WCOSS-Dell / Hera
+#
+################################################################################
+
+#  Set environment.
+export VERBOSE=${VERBOSE:-"YES"}
+if [ $VERBOSE = "YES" ]; then
+   echo $(date) EXECUTING $0 $* >&2
+   set -x
+fi
+
+#  Directories.
+pwd=$(pwd)
+export NWPROD=${NWPROD:-$pwd}
+export HOMEgfs=${HOMEgfs:-$NWPROD}
+export HOMEjedi=${HOMEjedi:-$HOMEgfs/sorc/jedi.fd/}
+export DATA=${DATA:-$pwd/analysis.$$}
+export COMIN=${COMIN:-$pwd}
+export COMIN_OBS=${COMIN_OBS:-$COMIN}
+export COMIN_GES=${COMIN_GES:-$COMIN}
+export COMIN_GES_ENS=${COMIN_GES_ENS:-$COMIN_GES}
+export COMIN_GES_OBS=${COMIN_GES_OBS:-$COMIN_GES}
+export COMOUT=${COMOUT:-$COMIN}
+export JEDIUSH=${JEDIUSH:-$HOMEgfs/ush/JEDI/}
+export AODTYPE=${AODTYPE:-"VIIRS"}
+
+# Base variables
+CDATE=${CDATE:-"2001010100"}
+CDUMP=${CDUMP:-"gdas"}
+GDUMP=${GDUMP:-"gdas"}
+
+# Derived base variables
+GDATE=$($NDATE -$assim_freq $CDATE)
+BDATE=$($NDATE -3 $CDATE)
+PDY=$(echo $CDATE | cut -c1-8)
+cyc=$(echo $CDATE | cut -c9-10)
+bPDY=$(echo $BDATE | cut -c1-8)
+bcyc=$(echo $BDATE | cut -c9-10)
+gPDY=$(echo $GDATE | cut -c1-8)
+gcyc=$(echo $GDATE | cut -c9-10)
+yyyymmdd=${PDY}
+hh=${cyc}
+
+# Utilities
+export NCP=${NCP:-"/bin/cp"}
+export NMV=${NMV:-"/bin/mv"}
+export NLN=${NLN:-"/bin/ln -sf"}
+export CHGRP_CMD=${CHGRP_CMD:-"chgrp ${group_name:-rstprod}"}
+export NCLEN=${NCLEN:-$HOMEgfs/ush/getncdimlen}
+export CATEXEC=${CATEXEC:-$HOMEgsi/exec/nc_diag_cat_serial.x}
+export VARSREPLACEEXEC=${VARSREPLACEEXEC:-$HOMEgsi/exec/replace_vars.x}
+export ERRSCRIPT=${ERRSCRIPT:-'eval [[ $err = 0 ]]'}
+COMPRESS=${COMPRESS:-gzip}
+UNCOMPRESS=${UNCOMPRESS:-gunzip}
+APRUNCFP=${APRUNCFP:-""}
+
+# FV3 specific info
+export CASE=${CASE:-"C384"}
+ntiles=${ntiles:-6}
+#LEVS=${LEVS:-$($NCLEN $ATMGES pfull)} # get LEVS
+# for above 'levs' in tiles is actually LEVS+1
+
+# Observations
+OPREFIX=${OPREFIX:-""}
+OSUFFIX=${OSUFFIX:-""}
+
+# Guess files
+GPREFIX=${GPREFIX:-""}
+GSUFFIX=${GSUFFIX:-$SUFFIX}
+
+# Analysis files
+export APREFIX=${APREFIX:-""}
+export ASUFFIX=${ASUFFIX:-$SUFFIX}
+
+# run python script to handle heavy lifting
+#$JEDIUSH/run_aero_3denvar.py
+
+# prepare for JEDI-var update
+$JEDIUSH/run_aero_3denvar_AOD_LUTs.sh
+
+# run JEDI
+source /apps/lmod/7.7.18/init/ksh
+. ${HOMEjedi}/jedi_module_base.hera
+#module load nco ncview ncl
+module list
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOMEjedi}/lib/"
+
+echo $LD_LIBRARY_PATH
+
+srun --export=all -n ${ncore_anal} ./fv3jedi_var.x hyb-3dvar_gfs_aero.yaml hyb-3dvar_gfs-aero.run
+err=$?
+
+if [ ${err} -ne 0 ]; then
+   echo "JEDI 3denvar failed and exit the program!!!"
+   exit 1
+fi
+
+# we need to now do some ncks things on the deterministic run
+itile=1
+while [[ $itile -le 6 ]]; do
+  gesfile=$ROTDIR/gdas.${gPDY}/${gcyc}/RESTART/${yyyymmdd}.${hh}0000.fv_tracer.res.tile${itile}.nc.ges
+  anlfile=$ROTDIR/gdas.${gPDY}/${gcyc}/RESTART/${yyyymmdd}.${hh}0000.fv_tracer.res.tile${itile}.nc
+  anlfile_jedi=$ROTDIR/gdas.${gPDY}/${gcyc}/RESTART/${yyyymmdd}.${hh}0000.fv_tracer.res.tile${itile}.nc.anl_jedi
+  /bin/mv ${anlfile} ${anlfile_jedi}
+  /bin/cp ${gesfile} ${anlfile}
+/bin/rm -rf replace_vars.nl
+cat << EOF > replace_vars.nl
+&replace_vars_nml
+fnamein = "${anlfile_jedi}"
+fnameout = "${anlfile}"
+varnames =  "sulf","bc1","bc2","oc1","oc2","dust1","dust2","dust3","dust4","dust5","seas1","seas2","seas3","seas4","seas5"
+/
+EOF
+#mpirun -np 1 ${VARSREPLACEEXEC}
+srun --export=all -n 1 ${VARSREPLACEEXEC}
+err=$?
+if  [ $err -ne 0 ]; then
+    echo "ReplaceVars run failed and exit the program!!!"
+    exit $err
+else
+    /bin/rm -rf ${anlfile_jedi}
+fi
+  ((itile=itile+1))
+done
+
+################################################################################
+# Send alerts
+#if [ $SENDDBN = "YES" ]; then
+#    if [ $RUN = "gdas" ]; then
+#       $DBNROOT/bin/dbn_alert MODEL GDASRADSTAT $job $RADSTAT
+#    fi
+#    if [ $RUN = "gfs" ]; then
+#       $DBNROOT/bin/dbn_alert MODEL GFS_abias $job $ABIAS
+#    fi
+#fi
+
+################################################################################
+# Postprocessing
+cd $pwd
+mkdata="YES"
+[[ $mkdata = "YES" ]] && rm -rf $DATA
+
+set +x
+if [ $VERBOSE = "YES" ]; then
+   echo $(date) EXITING $0 with return code $err >&2
+fi
+exit $err
